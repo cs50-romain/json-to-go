@@ -22,6 +22,23 @@ var (
 	W_SPACE = ' '
 )
 
+//Tokens:
+// Identifier start with " and ends with " and is before the :
+// String starts with " and ends with " but is always after a :
+// Punctuator is either { } : [ ] ,
+
+type String struct {
+	type string //String
+	value string
+}
+
+type Punctuator struct {
+	type string // Punctuator
+	value rune
+}
+
+
+// Tokenizer. Create an array of tokens for now
 func lexer() {
 	reader()
 }
