@@ -9,13 +9,15 @@ import (
 
 // Possible Characters
 var (
-	LEFT_BR = '{'
-	RIGHT_BR = '{'
-	LEFT_PA = '('
-	RIGHT_PA = ')'
-	DD = ':'
-	COMA = ','
-	QUOTE = '"'
+	LEFT_CB = '{'  //0
+	RIGHT_CB = '}' //1
+	LEFT_PA = '('  //2
+	RIGHT_PA = ')' //3
+	LEFT_BR = '['  //4
+	RIGHT_BR = ']' //5
+	DD = ':'       //6
+	COMA = ','     //7
+	QUOTE = '"'    //8
 	//CHAR = '[a-zA-Z]'
 	W_SPACE = ' '
 )
@@ -54,10 +56,12 @@ func readLine(line string){
 
 //read character
 func readChar(ch rune) {
-	if ch == LEFT_BR {
-		fmt.Println(" left bracket")
-	} else if ch == RIGHT_BR {
-		fmt.Println(" left bracket")
+	if ch == W_SPACE {
+		fmt.Println(" whitespace")
+	} else if ch == LEFT_CB {
+		fmt.Println(" left curly bracket")
+	} else if ch == RIGHT_CB {
+		fmt.Println(" right curly bracket")
 	} else if ch == LEFT_PA {
 		fmt.Println(" left parentheses")
 	} else if ch == RIGHT_PA {
@@ -66,6 +70,10 @@ func readChar(ch rune) {
 		fmt.Println(" double dot")
 	} else if ch == COMA {
 		fmt.Println(" comma")
+	} else if ch == LEFT_BR {
+		fmt.Println(" left bracket")
+	} else if ch == RIGHT_BR {
+		fmt.Println(" right bracket")
 	} else if ch == QUOTE {
 		fmt.Println(" quote")
 	} else {
