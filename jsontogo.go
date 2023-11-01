@@ -37,7 +37,6 @@ type Punctuator struct {
 	value rune
 }
 
-
 // Tokenizer. Create an array of tokens for now
 func lexer() {
 	reader()
