@@ -71,7 +71,9 @@ func lexer() {
 					lexeme: "string",
 					value: charBuffer,
 				}
-				tokens = append(tokens, token)
+				if !isWhiteSpace(charBuffer) {
+					tokens = append(tokens, token)
+				}
 				charBuffer = ""
 			}
 
@@ -86,6 +88,13 @@ func lexer() {
 	}
 
 	fmt.Println(tokens)
+}
+
+func isWhiteSpace(str string) bool {
+	if str == " " {
+		return true
+	}
+	return false
 }
 
 //read character
