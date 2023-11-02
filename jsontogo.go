@@ -71,7 +71,7 @@ func lexer() {
 					lexeme: "string",
 					value: charBuffer,
 				}
-				if !isWhiteSpace(charBuffer) {
+				if !isWhiteSpace(charBuffer ){
 					tokens = append(tokens, token)
 				}
 				charBuffer = ""
@@ -100,37 +100,26 @@ func isWhiteSpace(str string) bool {
 //read character
 func readChar(ch rune) bool {
 	if ch == W_SPACE {
-		fmt.Println(" whitespace")
 		return true 
 	} else if ch == LEFT_CB {
-		fmt.Println(" left curly bracket")
 		return false
 	} else if ch == RIGHT_CB {
-		fmt.Println(" right curly bracket")
 		return false
 	} else if ch == LEFT_PA {
-		fmt.Println(" left parentheses")
 		return false
 	} else if ch == RIGHT_PA {
-		fmt.Println(" right parentheses")
 		return false
 	} else if ch == DD {
-		fmt.Println(" double dot")
 		return false
 	} else if ch == COMA {
-		fmt.Println(" comma")
 		return false
 	} else if ch == LEFT_BR {
-		fmt.Println(" left bracket")
 		return false
 	} else if ch == RIGHT_BR {
-		fmt.Println(" right bracket")
 		return false
 	} else if ch == QUOTE {
-		fmt.Println(" quote")
 		return false
 	} else {
-		fmt.Println(" character")
 		return true 
 	}
 }
