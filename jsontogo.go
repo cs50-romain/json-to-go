@@ -29,6 +29,7 @@ var tokens []Token
 type Node struct {
 	key	string
 	value	string
+	children []*Node
 }
 
 type Treeast struct {
@@ -45,8 +46,12 @@ type Token struct {
 	value	string
 }
 
+func InitAST() *Treeast{
+	return &Treeast{nil}
+}
+
 // Tokenizer. Create an array of tokens for now
-func lexer() {
+func lexer(){
 	isIdentifier = true
 	chars := []rune{}
 	var charBuffer string
@@ -144,7 +149,10 @@ func readChar(ch rune) bool {
 }
 
 // Going through token array and create an AST tree by creating nodes
-func parser() {
+func parser(tree *Treeast) {
+	for token, _ := range tokens {
+			
+	}
 }
 
 // Generate a go struct from the AST tree
@@ -153,5 +161,8 @@ func toGo() {
 }
 
 func main() {
-	lexer()	
+	tree := InitAST()
+	root := &Node{"root", "root", nil}
+	lexer()
+	parser(tree)
 }
