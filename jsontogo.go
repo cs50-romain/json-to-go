@@ -22,20 +22,32 @@ var (
 	W_SPACE = ' '
 )
 
+var isIdentifier bool
+var tokens []Token
+
+// AST Node
+type Node struct {
+	key	string
+	value	string
+}
+
+type Treeast struct {
+	head	*Node
+}
+
 //Tokens:
 // Identifier start with " and ends with " and is before the :
 // String starts with " and ends with " but is always after a :
 // Punctuator is either { } : [ ] ,
 
 type Token struct {
-	lexeme string //String
-	value string
+	lexeme	string //String
+	value	string
 }
-
-var tokens []Token
 
 // Tokenizer. Create an array of tokens for now
 func lexer() {
+	isIdentifier = true
 	chars := []rune{}
 	var charBuffer string
 
@@ -68,8 +80,15 @@ func lexer() {
 		if !useBuffer {
 			if len(charBuffer) > 0 {
 				token := Token{
-					lexeme: "string",
+					lexeme: "",
 					value: charBuffer,
+				}
+				if isIdentifier {
+					token.lexeme = "identifier"
+					isIdentifier = false
+				} else {
+					token.lexeme = "value"
+					isIdentifier = true
 				}
 				if !isWhiteSpace(charBuffer ){
 					tokens = append(tokens, token)
@@ -124,7 +143,12 @@ func readChar(ch rune) bool {
 	}
 }
 
+// Going through token array and create an AST tree by creating nodes
 func parser() {
+}
+
+// Generate a go struct from the AST tree
+func toGo() {
 
 }
 
