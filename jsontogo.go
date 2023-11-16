@@ -50,6 +50,17 @@ func InitAST() *Treeast{
 	return &Treeast{nil}
 }
 
+func (t *Treeast) print() {
+	if t.head == nil {
+		return
+	}
+
+	curr := t.head
+	for _, child := range curr.children {
+		fmt.Println(child.key, child.value)
+	}
+}
+
 // Tokenizer. Create an array of tokens for now
 func lexer(){
 	isIdentifier = true
@@ -84,21 +95,25 @@ func lexer(){
 
 		if !useBuffer {
 			if len(charBuffer) > 0 {
-				token := Token{
-					lexeme: "",
-					value: charBuffer,
-				}
-				if isIdentifier {
-					token.lexeme = "identifier"
-					isIdentifier = false
+				if charBuffer[0] == ' ' {
+					charBuffer = ""
 				} else {
-					token.lexeme = "value"
-					isIdentifier = true
+					token := Token{
+						lexeme: "",
+						value: charBuffer,
+					}
+					if isIdentifier {
+						token.lexeme = "identifier"
+						isIdentifier = false
+					} else {
+						token.lexeme = "value"
+						isIdentifier = true
+					}
+					if !isWhiteSpace(charBuffer ){
+						tokens = append(tokens, token)
+					}
+					charBuffer = ""
 				}
-				if !isWhiteSpace(charBuffer ){
-					tokens = append(tokens, token)
-				}
-				charBuffer = ""
 			}
 
 			token := Token{
@@ -110,8 +125,6 @@ func lexer(){
 			charBuffer += string(char)			
 		}
 	}
-
-	fmt.Println(tokens)
 }
 
 func isWhiteSpace(str string) bool {
@@ -150,8 +163,21 @@ func readChar(ch rune) bool {
 
 // Going through token array and create an AST tree by creating nodes
 func parser(tree *Treeast) {
-	for token, _ := range tokens {
-			
+	for i := 0; i < len(tokens); i++ {
+		token := tokens[i]
+		node := &Node{"", "", nil}
+		if token.lexeme == "identifier" {
+			node.key = token.value
+			for j := i; j < len(tokens); j++ {
+				if tokens[j].lexeme == "value" {
+					node.value = tokens[j].value
+					j = len(tokens)
+				}
+			}
+		} else {
+			continue
+		}
+		tree.head.children = append(tree.head.children, node)
 	}
 }
 
@@ -163,6 +189,11 @@ func toGo() {
 func main() {
 	tree := InitAST()
 	root := &Node{"root", "root", nil}
+	tree.head = root
 	lexer()
 	parser(tree)
+	tree.print()
 }
+
+// TODOD:
+// Create a queue to hold tokens; parser can pop and peek
