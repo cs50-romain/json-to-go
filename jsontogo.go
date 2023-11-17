@@ -212,12 +212,16 @@ func parser(tree *Treeast) {
 		node := &Node{"", "", level, nil}
 		if token.lexeme == "identifier" {
 			node.key = token.value
-			for j := i; j < len(tokens); j++ {
-				if tokens[j].lexeme == "value" {
+			for j := i+1; j < len(tokens); j++ {
+				if tokens[j].lexeme == "identifier" {
+					node.value = "struct"
+					j = len(tokens)
+				} else if tokens[j].lexeme == "value" {
 					node.value = tokens[j].value
 					j = len(tokens)
 				}
 			}
+			fmt.Println(node)
 		} else {
 			continue
 		}
