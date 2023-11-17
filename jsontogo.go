@@ -61,6 +61,54 @@ func (t *Treeast) print() {
 	}
 }
 
+func (t *Treeast) traversal(node *Node) {
+	if node == nil {
+		return
+	}
+	
+	if node != t.head {
+		fmt.Println(node)
+	}
+	
+	for i := 0; i < len(node.children); i++ {
+		t.traversal(node.children[i])
+	}
+}
+
+func isWhiteSpace(str string) bool {
+	if str == " " {
+		return true
+	}
+	return false
+}
+
+//read character
+func readChar(ch rune) bool {
+	if ch == W_SPACE {
+		return true 
+	} else if ch == LEFT_CB {
+		return false
+	} else if ch == RIGHT_CB {
+		return false
+	} else if ch == LEFT_PA {
+		return false
+	} else if ch == RIGHT_PA {
+		return false
+	} else if ch == DD {
+		return false
+	} else if ch == COMA {
+		return false
+	} else if ch == LEFT_BR {
+		return false
+	} else if ch == RIGHT_BR {
+		return false
+	} else if ch == QUOTE {
+		return false
+	} else {
+		return true 
+	}
+}
+
 // Tokenizer. Create an array of tokens for now
 func lexer(){
 	isIdentifier = true
@@ -127,40 +175,6 @@ func lexer(){
 	}
 }
 
-func isWhiteSpace(str string) bool {
-	if str == " " {
-		return true
-	}
-	return false
-}
-
-//read character
-func readChar(ch rune) bool {
-	if ch == W_SPACE {
-		return true 
-	} else if ch == LEFT_CB {
-		return false
-	} else if ch == RIGHT_CB {
-		return false
-	} else if ch == LEFT_PA {
-		return false
-	} else if ch == RIGHT_PA {
-		return false
-	} else if ch == DD {
-		return false
-	} else if ch == COMA {
-		return false
-	} else if ch == LEFT_BR {
-		return false
-	} else if ch == RIGHT_BR {
-		return false
-	} else if ch == QUOTE {
-		return false
-	} else {
-		return true 
-	}
-}
-
 // Going through token array and create an AST tree by creating nodes
 func parser(tree *Treeast) {
 	for i := 0; i < len(tokens); i++ {
@@ -182,8 +196,11 @@ func parser(tree *Treeast) {
 }
 
 // Generate a go struct from the AST tree
-func toGo() {
-
+// Use NLR traversal
+func toGo(tree *Treeast) {
+	fmt.Println("type Object struct {")
+	tree.traversal(tree.head)
+	fmt.Println("}")
 }
 
 func main() {
@@ -192,7 +209,7 @@ func main() {
 	tree.head = root
 	lexer()
 	parser(tree)
-	tree.print()
+	toGo(tree)
 }
 
 // TODOD:
