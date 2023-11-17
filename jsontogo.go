@@ -67,7 +67,7 @@ func (t *Treeast) traversal(node *Node) {
 	}
 	
 	if node != t.head {
-		fmt.Println(node)
+		turnToGo(node)
 	}
 	
 	for i := 0; i < len(node.children); i++ {
@@ -201,6 +201,14 @@ func toGo(tree *Treeast) {
 	fmt.Println("type Object struct {")
 	tree.traversal(tree.head)
 	fmt.Println("}")
+}
+
+func turnToGo(node *Node) {
+	if len(node.value) < 20  {
+		fmt.Printf("\t%s\t\t%s\n", node.key, "string")
+	} else {
+		fmt.Printf("\t%s\t%s\n", node.key, "string")
+	}
 }
 
 func main() {
