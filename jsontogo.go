@@ -5,6 +5,7 @@ import (
 	//"io"
 	"bufio"
 	"os"
+	"strings"
 )
 
 // Possible Characters
@@ -25,17 +26,6 @@ var (
 var isIdentifier bool
 var tokens []Token
 
-// AST Node
-type Node struct {
-	key	string
-	value	string
-	children []*Node
-}
-
-type Treeast struct {
-	head	*Node
-}
-
 //Tokens:
 // Identifier start with " and ends with " and is before the :
 // String starts with " and ends with " but is always after a :
@@ -44,6 +34,18 @@ type Treeast struct {
 type Token struct {
 	lexeme	string //String
 	value	string
+}
+
+// AST Node
+type Node struct {
+	key	string
+	value	string
+	level	int
+	children []*Node
+}
+
+type Treeast struct {
+	head	*Node
 }
 
 func InitAST() *Treeast{
@@ -57,7 +59,7 @@ func (t *Treeast) print() {
 
 	curr := t.head
 	for _, child := range curr.children {
-		fmt.Println(child.key, child.value)
+		fmt.Println(child.key, child.value, child.level)
 	}
 }
 
@@ -83,35 +85,37 @@ func isWhiteSpace(str string) bool {
 }
 
 //read character
-func readChar(ch rune) bool {
+func readChar(ch rune) int {
 	if ch == W_SPACE {
-		return true 
+		return 0 
 	} else if ch == LEFT_CB {
-		return false
+		return 2 
 	} else if ch == RIGHT_CB {
-		return false
+		return 2
 	} else if ch == LEFT_PA {
-		return false
+		return 1
 	} else if ch == RIGHT_PA {
-		return false
+		return 1
 	} else if ch == DD {
-		return false
+		return 1
 	} else if ch == COMA {
-		return false
+		return 1
 	} else if ch == LEFT_BR {
-		return false
+		return 1
 	} else if ch == RIGHT_BR {
-		return false
+		return 1
 	} else if ch == QUOTE {
-		return false
+		return 1
 	} else {
-		return true 
+		return 0 
 	}
 }
 
 // Tokenizer. Create an array of tokens for now
 func lexer(input string){
-	isIdentifier = true
+
+	// Has to start as false otherwise values and identifiers will swapped
+	isIdentifier = false 
 	chars := []rune{}
 	var charBuffer string
 
@@ -141,7 +145,24 @@ func lexer(input string){
 		char := chars[i]
 		useBuffer := readChar(char)
 
-		if !useBuffer {
+		if useBuffer == 2 {
+			if string(char) == "{" {
+				if !isIdentifier {
+					isIdentifier = true
+				} else {
+					isIdentifier = false
+				}
+			}
+
+			token := Token{
+				lexeme: "startObject",
+				value: string(char),
+			}
+			tokens = append(tokens, token)
+		} else if useBuffer == 1 {
+			if useBuffer == 2 {
+				fmt.Println("Embedding")
+			}
 			if len(charBuffer) > 0 {
 				if charBuffer[0] == ' ' {
 					charBuffer = ""
@@ -177,9 +198,18 @@ func lexer(input string){
 
 // Going through token array and create an AST tree by creating nodes
 func parser(tree *Treeast) {
+	level := 0
+
 	for i := 0; i < len(tokens); i++ {
 		token := tokens[i]
-		node := &Node{"", "", nil}
+
+		if token.value == "{" {
+			level++
+		} else if token.value == "}" {
+			level--
+		}
+
+		node := &Node{"", "", level, nil}
 		if token.lexeme == "identifier" {
 			node.key = token.value
 			for j := i; j < len(tokens); j++ {
@@ -204,17 +234,19 @@ func toGo(tree *Treeast) {
 }
 
 func turnToGo(node *Node) {
+	tab := strings.Repeat("\t", node.level)
+
 	if len(node.value) < 20  {
-		fmt.Printf("\t%s\t\t%s\n", node.key, "string")
+		fmt.Printf("%s%s\t\t%s\n", tab, node.key, "string")
 	} else {
-		fmt.Printf("\t%s\t%s\n", node.key, "string")
+		fmt.Printf("%s%s\t%s\n", tab, node.key, "string")
 	}
 }
 
 func main() {
 	file := os.Args[1]
 	tree := InitAST()
-	root := &Node{"root", "root", nil}
+	root := &Node{"root", "root", 0, nil}
 	tree.head = root
 	lexer(file)
 	parser(tree)
