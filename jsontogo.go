@@ -110,12 +110,12 @@ func readChar(ch rune) bool {
 }
 
 // Tokenizer. Create an array of tokens for now
-func lexer(){
+func lexer(input string){
 	isIdentifier = true
 	chars := []rune{}
 	var charBuffer string
 
-	file, err := os.Open("sample.json")
+	file, err := os.Open(input)
 	if err != nil {
 		fmt.Println("Error:",err)
 	}
@@ -212,10 +212,11 @@ func turnToGo(node *Node) {
 }
 
 func main() {
+	file := os.Args[1]
 	tree := InitAST()
 	root := &Node{"root", "root", nil}
 	tree.head = root
-	lexer()
+	lexer(file)
 	parser(tree)
 	toGo(tree)
 }
