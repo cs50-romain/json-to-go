@@ -269,14 +269,24 @@ func turnToGo(node *Node, closeobj bool) {
 	}
 }
 
+func parseCmd(flags []string) {
+	if flags[1] != "copy" {
+		file := flags[1]
+		tree := InitAST()
+		root := &Node{"root", "root", 1, nil}
+		tree.head = root
+		lexer(file)
+		parser(tree)
+		toGo(tree)
+
+	}
+	if flags[2] == "copy" {
+		fmt.Println("Object copied to clipboard")
+	}
+}
+
 func main() {
-	file := os.Args[1]
-	tree := InitAST()
-	root := &Node{"root", "root", 1, nil}
-	tree.head = root
-	lexer(file)
-	parser(tree)
-	toGo(tree)
+	parseCmd(os.Args)
 }
 
 // TODOD:
