@@ -63,17 +63,22 @@ func (t *Treeast) print() {
 	}
 }
 
-func (t *Treeast) traversal(node *Node) {
+func (t *Treeast) traversal(node *Node, closeobj bool) {
 	if node == nil {
 		return
 	}
 	
 	if node != t.head {
-		turnToGo(node)
+		//fmt.Println("node:", node.key, node.level, prevnodelvl)
+		turnToGo(node, closeobj)
 	}
 	
 	for i := 0; i < len(node.children); i++ {
-		t.traversal(node.children[i])
+		if i > 0 && i == len(node.children)-1 {
+			t.traversal(node.children[i], true)
+		} else {
+			t.traversal(node.children[i], false)
+		}
 	}
 }
 
@@ -198,9 +203,14 @@ func lexer(input string){
 
 // Going through token array and create an AST tree by creating nodes
 func parser(tree *Treeast) {
-	level := 0
+	level := 1 
+	// Start helps to distinguish whether it is the start of a json object; true = start of json object
+	start := true
+	var node *Node
+	curr := tree.head
+	var prevnodes []*Node
 
-	for i := 0; i < len(tokens); i++ {
+	for i := 1; i < len(tokens)-1; i++ {
 		token := tokens[i]
 
 		if token.value == "{" {
@@ -209,23 +219,27 @@ func parser(tree *Treeast) {
 			level--
 		}
 
-		node := &Node{"", "", level, nil}
-		if token.lexeme == "identifier" {
-			node.key = token.value
-			for j := i+1; j < len(tokens); j++ {
-				if tokens[j].lexeme == "identifier" {
-					node.value = "struct"
-					j = len(tokens)
-				} else if tokens[j].lexeme == "value" {
-					node.value = tokens[j].value
-					j = len(tokens)
+		if token.lexeme == "value" {
+			node.value = token.value
+		} else if token.lexeme == "startObject" {
+			if start == true {	
+				node.value = "struct"
+				prevnodes = append(prevnodes, curr)
+				curr = node
+				start = false
+			} else {
+				curr = prevnodes[0]
+				if len(prevnodes) > 0 {
+					prevnodes = append(prevnodes[1:])
+				} else {
+					prevnodes = []*Node{}
 				}
+				start = true
 			}
-			fmt.Println(node)
-		} else {
-			continue
+		} else if token.lexeme == "identifier" {
+			node = &Node{token.value, "", level, nil}
+			curr.children = append(curr.children, node)
 		}
-		tree.head.children = append(tree.head.children, node)
 	}
 }
 
@@ -233,24 +247,32 @@ func parser(tree *Treeast) {
 // Use NLR traversal
 func toGo(tree *Treeast) {
 	fmt.Println("type Object struct {")
-	tree.traversal(tree.head)
-	fmt.Println("}")
+	tree.traversal(tree.head, false)
 }
 
-func turnToGo(node *Node) {
+func turnToGo(node *Node, closeobj bool) {
 	tab := strings.Repeat("\t", node.level)
 
-	if len(node.value) < 20  {
-		fmt.Printf("%s%s\t\t%s\n", tab, node.key, "string")
+	if node.value == "struct" {
+		fmt.Printf("%s%s\t%s\n", tab, node.key, "struct {")
 	} else {
-		fmt.Printf("%s%s\t%s\n", tab, node.key, "string")
+		if len(node.value) < 20  {
+			fmt.Printf("%s%s\t\t%s\n", tab, node.key, "string")
+		} else {
+			fmt.Printf("%s%s\t%s\n", tab, node.key, "string")
+		}
+	}
+
+	if closeobj == true {
+		tab = strings.Repeat("\t", node.level-1)
+		fmt.Printf("%s}\n", tab)
 	}
 }
 
 func main() {
 	file := os.Args[1]
 	tree := InitAST()
-	root := &Node{"root", "root", 0, nil}
+	root := &Node{"root", "root", 1, nil}
 	tree.head = root
 	lexer(file)
 	parser(tree)
