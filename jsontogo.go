@@ -254,7 +254,7 @@ func toGo(tree *Treeast) {
 	tree.traversal(tree.head, false)
 }
 
-func turnToGo(node *Node, closeobj bool) {
+func turnToGo(node *Node, closeobj bool) []byte{
 	tab := strings.Repeat("\t", node.level)
 
 	if node.value == "struct" {
@@ -273,8 +273,35 @@ func turnToGo(node *Node, closeobj bool) {
 	}
 }
 
+func toClipboard(output []byte) {
+	var copyCmd *exec.Cmd
+
+	in, err := exec.Command("xclip", "-selection", "C")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	in, err := copyCmd.StdingPipe()
+
+	if err := copy.CmdStart(); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := in.Write([]byte(output)); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := in.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	copyCmd.Wait()
+}
+
 func parseCmd(flags []string) {
 	doCopy := false
+	var output []byte
 	if len(flags) > 0 {
 		for _, flag := range flags {
 			if flag == "jsontogo.go" {
@@ -287,7 +314,7 @@ func parseCmd(flags []string) {
 				tree.head = root
 				lexer(flag)
 				parser(tree)
-				toGo(tree)
+				output = toGo(tree)
 			} else {
 				fmt.Println("Invalid command")
 			}
@@ -296,6 +323,7 @@ func parseCmd(flags []string) {
 
 	if doCopy {
 		fmt.Println("Copying to clipboard...")
+		toClipboard()
 	}
 }
 
