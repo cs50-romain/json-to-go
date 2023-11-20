@@ -23,7 +23,6 @@ var (
 	W_SPACE = ' '
 )
 
-var isIdentifier bool
 var tokens []Token
 
 //Tokens:
@@ -144,9 +143,9 @@ func readInput(input string) []rune{
 
 // Tokenizer. Create an array of tokens for now
 func lexer(input string){
-
 	// Has to start as false otherwise values and identifiers will swapped
-	isIdentifier = false 
+	isIdentifier := false 
+
 	var charBuffer string
 	chars := readInput(input)
 
@@ -275,18 +274,28 @@ func turnToGo(node *Node, closeobj bool) {
 }
 
 func parseCmd(flags []string) {
-	if flags[1] != "copy" {
-		file := flags[1]
-		tree := InitAST()
-		root := &Node{"root", "root", 1, nil}
-		tree.head = root
-		lexer(file)
-		parser(tree)
-		toGo(tree)
-
+	doCopy := false
+	if len(flags) > 0 {
+		for _, flag := range flags {
+			if flag == "jsontogo.go" {
+				continue
+			} else if flag == "copy" {
+				doCopy = true
+			} else if len(flag) > 5 && flag[len(flag)-5:len(flag)] == ".json" {
+				tree := InitAST()
+				root := &Node{"root", "root", 1, nil}
+				tree.head = root
+				lexer(flag)
+				parser(tree)
+				toGo(tree)
+			} else {
+				fmt.Println("Invalid command")
+			}
+		}
 	}
-	if flags[2] == "copy" {
-		fmt.Println("Object copied to clipboard")
+
+	if doCopy {
+		fmt.Println("Copying to clipboard...")
 	}
 }
 
