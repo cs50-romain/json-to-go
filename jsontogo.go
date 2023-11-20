@@ -116,13 +116,8 @@ func readChar(ch rune) int {
 	}
 }
 
-// Tokenizer. Create an array of tokens for now
-func lexer(input string){
-
-	// Has to start as false otherwise values and identifiers will swapped
-	isIdentifier = false 
+func readInput(input string) []rune{
 	chars := []rune{}
-	var charBuffer string
 
 	file, err := os.Open(input)
 	if err != nil {
@@ -144,6 +139,16 @@ func lexer(input string){
 	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
 	}
+	return chars
+}
+
+// Tokenizer. Create an array of tokens for now
+func lexer(input string){
+
+	// Has to start as false otherwise values and identifiers will swapped
+	isIdentifier = false 
+	var charBuffer string
+	chars := readInput(input)
 
 	// Tokenizing 
 	for i := 0; i < len(chars); i++ {
