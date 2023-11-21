@@ -346,5 +346,7 @@ func main() {
 	parseCmd(os.Args)
 }
 
-// TODOD:
+// TODO:
 // Create a queue to hold tokens; parser can pop and peek
+// Handle arrays as value, tokenize and parse
+// Trim the clipboard, maybe?
