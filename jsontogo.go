@@ -134,7 +134,7 @@ func readInput(input string) []rune{
 	// Append characters to array for simpler pass through
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println("Line: ", line)
+		//fmt.Println("Line: ", line)
 		for _, char := range line {
 			chars = append(chars, char)
 		}
@@ -272,20 +272,16 @@ func turnToGo(node *Node, closeobj bool) string {
 
 	if node.value == "struct" {
 		result = tab + node.key + "\t" + "struct {\n"
-		fmt.Printf("%s%s\t%s\n", tab, node.key, "struct {")
 	} else {
 		if len(node.value) < 20  {
 			result = tab + node.key + "\t\t" + "string\n"
-			fmt.Printf("%s%s\t\t%s\n", tab, node.key, "string")
 		} else {
 			result = tab + node.key + "\t" + "string\n"
-			fmt.Printf("%s%s\t%s\n", tab, node.key, "string")
 		}
 	}
 
 	if closeobj == true {
 		tab = strings.Repeat("\t", node.level-1)
-		fmt.Printf("%s}\n", tab)
 		result += tab + "}\n"
 	}
 
@@ -322,8 +318,8 @@ func parseCmd(flags []string) {
 	doCopy := false
 	var output string 
 	if len(flags) > 0 {
-		for _, flag := range flags {
-			if flag == "jsontogo.go" {
+		for idx, flag := range flags {
+			if flag == "jsontogo.go" || idx == 0 {
 				continue
 			} else if flag == "copy" {
 				doCopy = true
@@ -335,16 +331,14 @@ func parseCmd(flags []string) {
 				parser(tree)
 				output = toGo(tree)
 			} else {
-				fmt.Println("Invalid command")
+				fmt.Println("Invalid command", flag)
 			}
 		}
 	}
 
-	fmt.Println(string(output))
-
 	if doCopy {
-		fmt.Println("Copying to clipboard...")
 		toClipboard(output)
+		fmt.Println("[+] Output copied to clipboard")
 	}
 }
 
