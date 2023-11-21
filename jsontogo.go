@@ -4,7 +4,11 @@ import (
 	"fmt"
 	//"io"
 	"bufio"
+	"bytes"
+	"encoding/gob"
+	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -62,23 +66,24 @@ func (t *Treeast) print() {
 	}
 }
 
-func (t *Treeast) traversal(node *Node, closeobj bool) {
+func (t *Treeast) traversal(node *Node, closeobj bool, str string) string {
 	if node == nil {
-		return
+		return "" 
 	}
 	
 	if node != t.head {
 		//fmt.Println("node:", node.key, node.level, prevnodelvl)
-		turnToGo(node, closeobj)
+		str = turnToGo(node, closeobj)
 	}
 	
 	for i := 0; i < len(node.children); i++ {
 		if i > 0 && i == len(node.children)-1 {
-			t.traversal(node.children[i], true)
+			str += t.traversal(node.children[i], true, str)
 		} else {
-			t.traversal(node.children[i], false)
+			str += t.traversal(node.children[i], false, str)
 		}
 	}
+	return str
 }
 
 func isWhiteSpace(str string) bool {
@@ -247,22 +252,33 @@ func parser(tree *Treeast) {
 	}
 }
 
-// Generate a go struct from the AST tree
-// Use NLR traversal
-func toGo(tree *Treeast) {
-	fmt.Println("type Object struct {")
-	tree.traversal(tree.head, false)
+func strToByte(input []string) []byte {
+	buf := &bytes.Buffer{}
+	gob.NewEncoder(buf).Encode(input)
+	return buf.Bytes()
 }
 
-func turnToGo(node *Node, closeobj bool) []byte{
+// Generate a go struct from the AST tree
+// Use NLR traversal
+func toGo(tree *Treeast) string {
+	input := "type Object struct {\n" + tree.traversal(tree.head, false, "")
+	
+	return input
+}
+
+func turnToGo(node *Node, closeobj bool) string {
 	tab := strings.Repeat("\t", node.level)
+	result := ""
 
 	if node.value == "struct" {
+		result = tab + node.key + "\t" + "struct {\n"
 		fmt.Printf("%s%s\t%s\n", tab, node.key, "struct {")
 	} else {
 		if len(node.value) < 20  {
+			result = tab + node.key + "\t\t" + "string\n"
 			fmt.Printf("%s%s\t\t%s\n", tab, node.key, "string")
 		} else {
+			result = tab + node.key + "\t" + "string\n"
 			fmt.Printf("%s%s\t%s\n", tab, node.key, "string")
 		}
 	}
@@ -270,21 +286,24 @@ func turnToGo(node *Node, closeobj bool) []byte{
 	if closeobj == true {
 		tab = strings.Repeat("\t", node.level-1)
 		fmt.Printf("%s}\n", tab)
+		result += tab + "}\n"
 	}
+
+	return result
 }
 
-func toClipboard(output []byte) {
+func toClipboard(output string) {
 	var copyCmd *exec.Cmd
 
-	in, err := exec.Command("xclip", "-selection", "C")
+	copyCmd = exec.Command("xclip", "-selection", "C")
+
+	in, err := copyCmd.StdinPipe()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	in, err := copyCmd.StdingPipe()
-
-	if err := copy.CmdStart(); err != nil {
+	if err := copyCmd.Start(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -301,7 +320,7 @@ func toClipboard(output []byte) {
 
 func parseCmd(flags []string) {
 	doCopy := false
-	var output []byte
+	var output string 
 	if len(flags) > 0 {
 		for _, flag := range flags {
 			if flag == "jsontogo.go" {
@@ -321,9 +340,11 @@ func parseCmd(flags []string) {
 		}
 	}
 
+	fmt.Println(string(output))
+
 	if doCopy {
 		fmt.Println("Copying to clipboard...")
-		toClipboard()
+		toClipboard(output)
 	}
 }
 
