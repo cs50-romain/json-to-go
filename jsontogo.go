@@ -66,24 +66,24 @@ func (t *Treeast) print() {
 	}
 }
 
-func (t *Treeast) traversal(node *Node, closeobj bool, str string) string {
+func (t *Treeast) traversal(node *Node, closeobj bool, str strings.Builder) string {
 	if node == nil {
 		return "" 
 	}
 	
 	if node != t.head {
 		//fmt.Println("node:", node.key, node.level, prevnodelvl)
-		str = turnToGo(node, closeobj)
+		str.WriteString(turnToGo(node, closeobj))
 	}
 	
 	for i := 0; i < len(node.children); i++ {
 		if i > 0 && i == len(node.children)-1 {
-			str += t.traversal(node.children[i], true, str)
+			_ = t.traversal(node.children[i], true, str)
 		} else {
-			str += t.traversal(node.children[i], false, str)
+			_ = t.traversal(node.children[i], false, str)
 		}
 	}
-	return str
+	return str.String()
 }
 
 func isWhiteSpace(str string) bool {
@@ -261,7 +261,8 @@ func strToByte(input []string) []byte {
 // Generate a go struct from the AST tree
 // Use NLR traversal
 func toGo(tree *Treeast) string {
-	input := "type Object struct {\n" + tree.traversal(tree.head, false, "")
+	var b strings.Builder
+	input := "type Object struct {\n" + tree.traversal(tree.head, false, b)
 	
 	return input
 }
