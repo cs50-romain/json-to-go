@@ -66,7 +66,7 @@ func (t *Treeast) print() {
 	}
 }
 
-func (t *Treeast) traversal(node *Node, closeobj bool, str strings.Builder) string {
+func (t *Treeast) traversal(node *Node, closeobj bool, str *strings.Builder) string {
 	if node == nil {
 		return "" 
 	}
@@ -159,7 +159,7 @@ func lexer(input string){
 		char := chars[i]
 		useBuffer := readChar(char)
 
-		if useBuffer == 2 {
+		if useBuffer == 2 /**/{
 			if string(char) == "{" {
 				if !isIdentifier {
 					isIdentifier = true
@@ -208,6 +208,7 @@ func lexer(input string){
 			charBuffer += string(char)			
 		}
 	}
+	fmt.Println(tokens)
 }
 
 // Going through token array and create an AST tree by creating nodes
@@ -262,9 +263,10 @@ func strToByte(input []string) []byte {
 // Use NLR traversal
 func toGo(tree *Treeast) string {
 	var b strings.Builder
-	input := "type Object struct {\n" + tree.traversal(tree.head, false, b)
+	b.WriteString("type Object struct{\n")
+	_ = tree.traversal(tree.head, false, &b)
 	
-	return input
+	return b.String()
 }
 
 func turnToGo(node *Node, closeobj bool) string {
@@ -340,14 +342,11 @@ func parseCmd(flags []string) {
 	if doCopy {
 		toClipboard(output)
 		fmt.Println("[+] Output copied to clipboard")
+	} else {
+		fmt.Println(output)
 	}
 }
 
 func main() {
 	parseCmd(os.Args)
 }
-
-// TODO:
-// Create a queue to hold tokens; parser can pop and peek
-// Handle arrays as value, tokenize and parse
-// Trim the clipboard, maybe?
