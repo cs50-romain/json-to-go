@@ -110,9 +110,9 @@ func readChar(ch rune) int {
 	} else if ch == COMA {
 		return 1
 	} else if ch == LEFT_BR {
-		return 1
+		return 3
 	} else if ch == RIGHT_BR {
-		return 1
+		return 3
 	} else if ch == QUOTE {
 		return 1
 	} else {
@@ -148,8 +148,9 @@ func readInput(input string) []rune{
 
 // Tokenizer. Create an array of tokens for now
 func lexer(input string){
-	// Has to start as false otherwise values and identifiers will swapped
+	// Has to start as false otherwise values and identifiers will be swapped
 	isIdentifier := false 
+	isValue := false
 
 	var charBuffer string
 	chars := readInput(input)
@@ -159,7 +160,21 @@ func lexer(input string){
 		char := chars[i]
 		useBuffer := readChar(char)
 
-		if useBuffer == 2 /**/{
+		if useBuffer == 3 /*Array*/ {
+			// Everything inside the array is a value
+			if string(char) == "[" {
+				isValue = true
+			} else {
+				isValue = false
+				isIdentifier = true
+			}
+
+			token := Token{
+				lexeme: "Array",
+				value: string(char),
+			}
+			tokens = append(tokens, token)
+		} else if useBuffer == 2 /**/{
 			if string(char) == "{" {
 				if !isIdentifier {
 					isIdentifier = true
@@ -175,7 +190,6 @@ func lexer(input string){
 			tokens = append(tokens, token)
 		} else if useBuffer == 1 {
 			if useBuffer == 2 {
-				fmt.Println("Embedding")
 			}
 			if len(charBuffer) > 0 {
 				if charBuffer[0] == ' ' {
@@ -185,7 +199,9 @@ func lexer(input string){
 						lexeme: "",
 						value: charBuffer,
 					}
-					if isIdentifier {
+					if isValue {
+						token.lexeme = "value"
+					} else if isIdentifier {
 						token.lexeme = "identifier"
 						isIdentifier = false
 					} else {
@@ -208,7 +224,6 @@ func lexer(input string){
 			charBuffer += string(char)			
 		}
 	}
-	fmt.Println(tokens)
 }
 
 // Going through token array and create an AST tree by creating nodes
@@ -230,7 +245,11 @@ func parser(tree *Treeast) {
 		}
 
 		if token.lexeme == "value" {
-			node.value = token.value
+			if node.value != "" || node.value == "array" {
+				node.value = "array"
+			} else {
+				node.value = token.value
+			}
 		} else if token.lexeme == "startObject" {
 			if start == true {	
 				node.value = "struct"
@@ -275,7 +294,13 @@ func turnToGo(node *Node, closeobj bool) string {
 
 	if node.value == "struct" {
 		result = tab + node.key + "\t" + "struct {\n"
-	} else {
+	} else if node.value == "array" {		
+		if len(node.value) < 20  {
+			result = tab + node.key + "\t\t" + "[]string\n"
+		} else {
+			result = tab + node.key + "\t" + "[]string\n"
+		}
+	}else {
 		if len(node.value) < 20  {
 			result = tab + node.key + "\t\t" + "string\n"
 		} else {
