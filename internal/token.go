@@ -9,3 +9,6 @@ type Token struct {
 	Lexeme	string //String
 	Value	string
 }
+
+// Lexeme can be: identifier, Array, value, object
+// Value can be any of the chars/string
