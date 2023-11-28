@@ -1,6 +1,7 @@
 package queue
 
 import "github.com/cs50-romain/jsontogo/internal"
+import "fmt"
 
 type Node struct {
 	value token.Token
@@ -9,6 +10,18 @@ type Node struct {
 
 type Queue struct {
 	head *Node
+}
+
+func (q *Queue) Print() {
+	if q.head == nil {
+		return
+	}
+
+	curr := q.head
+	for curr.next != nil {
+		fmt.Println("Current node:", curr)
+		curr = curr.next
+	}
 }
 
 func (q *Queue) Pop() *token.Token {
@@ -37,13 +50,14 @@ func (q *Queue) Push(s token.Token) {
 	node := &Node{s, nil}
 	if q.head == nil {
 		q.head = node
-	} else {
-		curr := q.head
-		for curr != nil {
-			curr = curr.next
-		}
-		curr = node
+		return
 	}
+
+	curr := q.head
+	for curr.next != nil {
+		curr = curr.next
+	}
+	curr.next = node
 }
 
 func Init() *Queue {
