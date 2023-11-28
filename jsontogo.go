@@ -10,6 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/cs50-romain/jsontogo/util"
+	"github.com/cs50-romain/jsontogo/internal"
 )
 
 // Possible Characters
@@ -27,17 +30,8 @@ var (
 	W_SPACE = ' '
 )
 
-var tokens []Token
-
-//Tokens:
-// Identifier start with " and ends with " and is before the :
-// String starts with " and ends with " but is always after a :
-// Punctuator is either { } : [ ] ,
-
-type Token struct {
-	lexeme	string //String
-	value	string
-}
+var tokens []token.Token
+var tokenqueue *queue.Queue
 
 // AST Node
 type Node struct {
@@ -146,7 +140,7 @@ func readInput(input string) []rune{
 	return chars
 }
 
-// Tokenizer. Create an array of tokens for now
+// token.Tokenizer. Create an array of tokens for now
 func lexer(input string){
 	// Has to start as false otherwise values and identifiers will be swapped
 	isIdentifier := false 
@@ -155,7 +149,7 @@ func lexer(input string){
 	var charBuffer string
 	chars := readInput(input)
 
-	// Tokenizing 
+	// token.Tokenizing 
 	for i := 0; i < len(chars); i++ {
 		char := chars[i]
 		useBuffer := readChar(char)
@@ -169,11 +163,12 @@ func lexer(input string){
 				isIdentifier = true
 			}
 
-			token := Token{
-				lexeme: "Array",
-				value: string(char),
+			token := token.Token{
+				Lexeme: "Array",
+				Value: string(char),
 			}
 			tokens = append(tokens, token)
+			tokenqueue.Push(token)
 		} else if useBuffer == 2 /**/{
 			if string(char) == "{" {
 				if !isIdentifier {
@@ -183,9 +178,9 @@ func lexer(input string){
 				}
 			}
 
-			token := Token{
-				lexeme: "startObject",
-				value: string(char),
+			token := token.Token{
+				Lexeme: "startObject",
+				Value: string(char),
 			}
 			tokens = append(tokens, token)
 		} else if useBuffer == 1 {
@@ -195,31 +190,33 @@ func lexer(input string){
 				if charBuffer[0] == ' ' {
 					charBuffer = ""
 				} else {
-					token := Token{
-						lexeme: "",
-						value: charBuffer,
+					token := token.Token{
+						Lexeme: "",
+						Value: charBuffer,
 					}
 					if isValue {
-						token.lexeme = "value"
+						token.Lexeme = "value"
 					} else if isIdentifier {
-						token.lexeme = "identifier"
+						token.Lexeme = "identifier"
 						isIdentifier = false
 					} else {
-						token.lexeme = "value"
+						token.Lexeme = "value"
 						isIdentifier = true
 					}
 					if !isWhiteSpace(charBuffer ){
 						tokens = append(tokens, token)
+						tokenqueue.Push(token)
 					}
 					charBuffer = ""
 				}
 			}
 
-			token := Token{
-				lexeme: "punctuator",
-				value: string(char),
+			token := token.Token{
+				Lexeme: "punctuator",
+				Value: string(char),
 			}
 			tokens = append(tokens, token)
+			tokenqueue.Push(token)
 		} else {
 			charBuffer += string(char)			
 		}
@@ -235,22 +232,26 @@ func parser(tree *Treeast) {
 	curr := tree.head
 	var prevnodes []*Node
 
-	for i := 1; i < len(tokens)-1; i++ {
+	for i := 0; i < len(tokens)-1; i++ {
 		token := tokens[i]
+		fmt.Println(token)
 
-		if token.value == "{" {
+		if token.Value == "{" {
 			level++
-		} else if token.value == "}" {
+		} else if token.Value == "}" {
 			level--
 		}
 
-		if token.lexeme == "value" {
+
+		if token.Lexeme == "Array" {
+			
+		} else if token.Lexeme == "value" {
 			if node.value != "" || node.value == "array" {
 				node.value = "array"
 			} else {
-				node.value = token.value
+				node.value = token.Value
 			}
-		} else if token.lexeme == "startObject" {
+		} else if token.Lexeme == "startObject" {
 			if start == true {	
 				node.value = "struct"
 				prevnodes = append(prevnodes, curr)
@@ -265,8 +266,8 @@ func parser(tree *Treeast) {
 				}
 				start = true
 			}
-		} else if token.lexeme == "identifier" {
-			node = &Node{token.value, "", level, nil}
+		} else if token.Lexeme == "identifier" {
+			node = &Node{token.Value, "", level, nil}
 			curr.children = append(curr.children, node)
 		}
 	}
@@ -373,5 +374,6 @@ func parseCmd(flags []string) {
 }
 
 func main() {
+	tokenqueue = queue.Init()
 	parseCmd(os.Args)
 }
