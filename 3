@@ -55,7 +55,7 @@ func (t *Treeast) traversal(node *Node, closeobj bool, str *strings.Builder) str
 		return "" 
 	}
 	
-	//fmt.Printf("node{type: %s | key: %s | value: %s | level: %d}\n", node.ttype, node.key, node.value, node.level)
+	fmt.Printf("node{type: %s | key: %s | value: %s | level: %d}\n", node.ttype, node.key, node.value, node.level)
 	str.WriteString(turnToGo(node, closeobj))
 	
 	for i := 0; i < len(node.children); i++ {
@@ -135,7 +135,6 @@ func lexer(input string){
 	isValue := false
 
 	var charBuffer string
-	var prevChar rune
 	chars := readInput(input)
 
 	// token.Tokenizing 
@@ -158,7 +157,7 @@ func lexer(input string){
 			}
 			tokens = append(tokens, token)
 			tokenqueue.Push(token)
-		} else if useBuffer == 2 /*CB*/{
+		} else if useBuffer == 2 /**/{
 			if string(char) == "{" {
 				if !isIdentifier {
 					isIdentifier = true
@@ -174,47 +173,43 @@ func lexer(input string){
 			tokens = append(tokens, token)
 			tokenqueue.Push(token)
 		} else if useBuffer == 1 {
-			if prevChar != '"' && char == ':' {
-				charBuffer += string(char)
-			} else {
-				if len(charBuffer) > 0 {
-					if charBuffer[0] == ' ' {
-						charBuffer = ""
-					} else {
-						token := token.Token{
-							Lexeme: "",
-							Value: charBuffer,
-						}
-						if isValue {
-							token.Lexeme = "value"
-						} else if isIdentifier {
-							token.Lexeme = "identifier"
-							isIdentifier = false
-						} else {
-							token.Lexeme = "value"
-							isIdentifier = true
-						}
-						if !isWhiteSpace(charBuffer ){
-							tokens = append(tokens, token)
-							tokenqueue.Push(token)
-						}
-						charBuffer = ""
-					}
-				}
-
-				token := token.Token{
-					Lexeme: "punctuator",
-					Value: string(char),
-				}
-				tokens = append(tokens, token)
-				tokenqueue.Push(token)
+			if useBuffer == 2 {
 			}
+			if len(charBuffer) > 0 {
+				if charBuffer[0] == ' ' {
+					charBuffer = ""
+				} else {
+					token := token.Token{
+						Lexeme: "",
+						Value: charBuffer,
+					}
+					if isValue {
+						token.Lexeme = "value"
+					} else if isIdentifier {
+						token.Lexeme = "identifier"
+						isIdentifier = false
+					} else {
+						token.Lexeme = "value"
+						isIdentifier = true
+					}
+					if !isWhiteSpace(charBuffer ){
+						tokens = append(tokens, token)
+						tokenqueue.Push(token)
+					}
+					charBuffer = ""
+				}
+			}
+
+			token := token.Token{
+				Lexeme: "punctuator",
+				Value: string(char),
+			}
+			tokens = append(tokens, token)
+			tokenqueue.Push(token)
 		} else {
 			charBuffer += string(char)			
 		}
-		prevChar = char
 	}
-	tokenqueue.Print()
 }
 
 func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
@@ -298,12 +293,13 @@ func turnToGo(node *Node, closeobj bool) string {
 	result := ""
 
 	if node.ttype == "Object" /*== "struct"*/ {
-		if node.value[0] == "}" {
-			tab = strings.Repeat("\t", node.level)
-			result += tab + "}\n"
-		}
+		continue //for now
 	} else if node.ttype == "Array" /* == "array" */{		
-		
+		if len(node.value) < 20  {
+			result = tab + node.key + "\t\t" + "[]struct\n"
+		} else {
+			result = tab + node.key + "\t" + "[]struct\n"
+		}
 	} else if node.ttype == "Property" && len(node.value) >= 1 {
 		if len(node.value) > 1 {
 			if len(node.value) < 20  {
@@ -323,6 +319,8 @@ func turnToGo(node *Node, closeobj bool) string {
 	}
 
 	if closeobj == true {
+		tab = strings.Repeat("\t", node.level)
+		result += tab + "}\n"
 	}
 
 	return result

@@ -1,0 +1,42 @@
+Object {
+	type	 string
+	children []Nodes
+}
+
+Property {
+	type	 string
+	key	 string
+	value	 Array/[] or Literal/string
+}
+
+OR 
+
+Node {
+	type		string // Object, Property or Array
+	key		string
+	value		string // ONLY FOR LITERALS
+	level		into
+	children	[]*Node
+}
+
+An Object starts when we encounter the following token: "{"
+An Object ends when we encounter the following token: "}"
+Every token in between gets appended to the Object.children
+
+A Property starts when we find a node.lexeme that is an identifier
+
+----------------------------------------------------------------------
+package token
+
+//Tokens:
+// Identifier start with " and ends with " and is before the :
+// String starts with " and ends with " but is always after a :
+// Punctuator is either : ,
+
+type Token struct {
+	Lexeme	string //String
+	Value	string
+}
+
+// Lexeme can be: identifier, Array, value, object
+// Value can be any of the chars/string
