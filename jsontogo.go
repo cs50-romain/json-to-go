@@ -4,8 +4,8 @@ import (
 	"fmt"
 	//"io"
 	"bufio"
-	"bytes"
-	"encoding/gob"
+	//"bytes"
+	//"encoding/gob"
 	"log"
 	"os"
 	"os/exec"
@@ -35,10 +35,11 @@ var tokenqueue *queue.Queue
 
 // AST Node
 type Node struct {
-	key	string
-	value	string
-	level	int
-	children []*Node
+	ttype		string
+	key		string
+	value		[]string
+	level		int
+	children	[]*Node
 }
 
 type Treeast struct {
@@ -49,26 +50,13 @@ func InitAST() *Treeast{
 	return &Treeast{nil}
 }
 
-func (t *Treeast) print() {
-	if t.head == nil {
-		return
-	}
-
-	curr := t.head
-	for _, child := range curr.children {
-		fmt.Println(child.key, child.value, child.level)
-	}
-}
-
 func (t *Treeast) traversal(node *Node, closeobj bool, str *strings.Builder) string {
 	if node == nil {
 		return "" 
 	}
 	
-	if node != t.head {
-		//fmt.Println("node:", node.key, node.level, prevnodelvl)
-		str.WriteString(turnToGo(node, closeobj))
-	}
+	fmt.Printf("node: %s %s %s level: %d\n", node.ttype, node.key, node.value, node.level)
+	str.WriteString(turnToGo(node, closeobj))
 	
 	for i := 0; i < len(node.children); i++ {
 		if i > 0 && i == len(node.children)-1 {
@@ -179,10 +167,11 @@ func lexer(input string){
 			}
 
 			token := token.Token{
-				Lexeme: "startObject",
+				Lexeme: "object",
 				Value: string(char),
 			}
 			tokens = append(tokens, token)
+			tokenqueue.Push(token)
 		} else if useBuffer == 1 {
 			if useBuffer == 2 {
 			}
@@ -223,60 +212,71 @@ func lexer(input string){
 	}
 }
 
-// Going through token array and create an AST tree by creating nodes
-func parser(tree *Treeast) {
-	level := 1 
-	// Start helps to distinguish whether it is the start of a json object; true = start of json object
-	start := true
-	var node *Node
-	curr := tree.head
-	var prevnodes []*Node
+func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
+	if tree.head == nil {
+		root := tokenqueue.Pop()
+		if root.Lexeme == "object" && root.Value == "{" {
+			tree.head = &Node{"Object", "", []string{root.Value}, level, []*Node{}}	
+		} else {
+			tree.head = &Node{"Array", "", []string{root.Value}, level, []*Node{}}
+		}
+		node = tree.head
+		level++
+	}
+	fmt.Println(level)
 
-	for i := 0; i < len(tokens)-1; i++ {
-		token := tokens[i]
-		fmt.Println(token)
+	// BUILD TEST CASE FOR RECURSION
+	if tokenqueue.Peek() == nil {
+		fmt.Println("Returning: next token is nil", tokenqueue.Peek())
+		return
+	}
 
-		if token.Value == "{" {
-			level++
-		} else if token.Value == "}" {
-			level--
+	if tokenqueue.Peek().Value == "}" {
+		_ = tokenqueue.Pop()
+		return
+	}
+
+	if tokenqueue.Peek().Value == "]" {
+		fmt.Println("Returning: next token is a RB", tokenqueue.Peek())
+		_ = tokenqueue.Pop()
+		return
+	}
+
+	currnode := node
+	
+	for tokenqueue.Peek() != nil {
+		nextoken := tokenqueue.Pop()
+
+
+		if nextoken == nil {
+			return
 		}
 
+		if nextoken.Value == "}" || nextoken.Value == "]" {
+			level--
+		} else if nextoken.Value == "{" || nextoken.Value == "[" {
+			level++
+		}
 
-		if token.Lexeme == "Array" {
-			
-		} else if token.Lexeme == "value" {
-			if node.value != "" || node.value == "array" {
-				node.value = "array"
-			} else {
-				node.value = token.Value
+		// Append to current node's children and recurse
+		if nextoken.Lexeme == "object" { // The token is
+			currnode.children = append(currnode.children, &Node{"Object", "", []string{nextoken.Value}, level, []*Node{}})
+
+			parser(tree, currnode.children[len(currnode.children) - 1], prevIdentifierNode, level)
+		} else if nextoken.Lexeme == "identifier" {
+			newnode := &Node{"Property", nextoken.Value, []string{}, level, []*Node{}}
+			currnode.children = append(currnode.children, newnode)
+			// PEEK and POP until we peek either a value or an object or an array
+			prevIdentifierNode = newnode
+		} else if nextoken.Lexeme == "Array" {
+			currnode.children = append(currnode.children, &Node{"Array", "", []string{nextoken.Value}, level, []*Node{}})
+		} else if nextoken.Lexeme == "value" {
+			if prevIdentifierNode != nil {
+				prevIdentifierNode.value = append(prevIdentifierNode.value, nextoken.Value)
 			}
-		} else if token.Lexeme == "startObject" {
-			if start == true {	
-				node.value = "struct"
-				prevnodes = append(prevnodes, curr)
-				curr = node
-				start = false
-			} else {
-				curr = prevnodes[0]
-				if len(prevnodes) > 0 {
-					prevnodes = append(prevnodes[1:])
-				} else {
-					prevnodes = []*Node{}
-				}
-				start = true
-			}
-		} else if token.Lexeme == "identifier" {
-			node = &Node{token.Value, "", level, nil}
-			curr.children = append(curr.children, node)
 		}
 	}
-}
-
-func strToByte(input []string) []byte {
-	buf := &bytes.Buffer{}
-	gob.NewEncoder(buf).Encode(input)
-	return buf.Bytes()
+	return
 }
 
 // Generate a go struct from the AST tree
@@ -293,9 +293,9 @@ func turnToGo(node *Node, closeobj bool) string {
 	tab := strings.Repeat("\t", node.level)
 	result := ""
 
-	if node.value == "struct" {
+	if node.value != nil/*== "struct"*/ {
 		result = tab + node.key + "\t" + "struct {\n"
-	} else if node.value == "array" {		
+	} else if node.value != nil /* == "array" */{		
 		if len(node.value) < 20  {
 			result = tab + node.key + "\t\t" + "[]string\n"
 		} else {
@@ -310,7 +310,7 @@ func turnToGo(node *Node, closeobj bool) string {
 	}
 
 	if closeobj == true {
-		tab = strings.Repeat("\t", node.level-1)
+		tab = strings.Repeat("\t", node.level)
 		result += tab + "}\n"
 	}
 
@@ -354,10 +354,8 @@ func parseCmd(flags []string) {
 				doCopy = true
 			} else if len(flag) > 5 && flag[len(flag)-5:len(flag)] == ".json" {
 				tree := InitAST()
-				root := &Node{"root", "root", 1, nil}
-				tree.head = root
 				lexer(flag)
-				parser(tree)
+				parser(tree, tree.head, nil, 0)
 				output = toGo(tree)
 			} else {
 				fmt.Println("Invalid command", flag)
@@ -369,7 +367,7 @@ func parseCmd(flags []string) {
 		toClipboard(output)
 		fmt.Println("[+] Output copied to clipboard")
 	} else {
-		fmt.Println(output)
+		fmt.Println("Output:", output)
 	}
 }
 
