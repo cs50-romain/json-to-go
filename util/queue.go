@@ -26,7 +26,7 @@ func (q *Queue) Print() {
 
 func (q *Queue) Pop() *token.Token {
 	if q.head == nil {
-		return &token.Token{"", ""} 
+		return nil 
 	}
 
 	result := q.head
@@ -38,12 +38,7 @@ func (q *Queue) Peek() *token.Token {
 	if q.head == nil {
 		return &token.Token{"", ""} 
 	}
-
-	curr := q.head
-	for curr.next != nil {
-		curr = curr.next
-	}
-	return &curr.value
+	return &q.head.value
 }
 
 func (q *Queue) Push(s token.Token) {
