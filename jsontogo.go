@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	//"io"
 	"bufio"
 	//"bytes"
 	//"encoding/gob"
@@ -14,6 +13,8 @@ import (
 	"github.com/cs50-romain/jsontogo/util"
 	"github.com/cs50-romain/jsontogo/internal"
 )
+
+// Add checking for integer (currently lexer will only recognize strings "something" as a value to an identifier
 
 // Possible Characters
 var (
@@ -49,6 +50,9 @@ type Treeast struct {
 func InitAST() *Treeast{
 	return &Treeast{nil}
 }
+
+// Maybe add a function that checks if a another node is equal (same key, level) to this node. If so 
+// To make it faster, go down the tree by the level of the node(a child is 1 level)
 
 func (t *Treeast) traversal(node *Node, closeobj bool, str *strings.Builder) string {
 	if node == nil {
@@ -158,13 +162,12 @@ func lexer(input string){
 			}
 			tokens = append(tokens, token)
 			tokenqueue.Push(token)
-		} else if useBuffer == 2 /*CB*/{
+		} else if useBuffer == 2 /*Curly B*/{
 			if string(char) == "{" {
-				if !isIdentifier {
-					isIdentifier = true
-				} else {
-					isIdentifier = false
-				}
+				isIdentifier = true
+				isValue = false
+			} else {
+				isIdentifier = false
 			}
 
 			token := token.Token{
@@ -236,6 +239,7 @@ func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
 	}
 
 	if tokenqueue.Peek().Value == "}" {
+		fmt.Println("Returning: next token is CB", tokenqueue.Peek())
 		_ = tokenqueue.Pop()
 		return
 	}
@@ -263,14 +267,13 @@ func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
 		}
 
 		// Append to current node's children and recurse
-		if nextoken.Lexeme == "object" { // The token is
+		if nextoken.Lexeme == "object" {
 			currnode.children = append(currnode.children, &Node{"Object", "", []string{nextoken.Value}, level, []*Node{}})
 
 			parser(tree, currnode.children[len(currnode.children) - 1], prevIdentifierNode, level)
 		} else if nextoken.Lexeme == "identifier" {
 			newnode := &Node{"Property", nextoken.Value, []string{}, level, []*Node{}}
 			currnode.children = append(currnode.children, newnode)
-			// PEEK and POP until we peek either a value or an object or an array
 			prevIdentifierNode = newnode
 		} else if nextoken.Lexeme == "Array" {
 			currnode.children = append(currnode.children, &Node{"Array", "", []string{nextoken.Value}, level, []*Node{}})
@@ -289,6 +292,7 @@ func toGo(tree *Treeast) string {
 	var b strings.Builder
 	b.WriteString("type AutomatedType struct {\n")
 	_ = tree.traversal(tree.head, false, &b)
+	b.WriteString("}")
 	
 	return b.String()
 }
@@ -298,21 +302,16 @@ func turnToGo(node *Node, closeobj bool) string {
 	result := ""
 
 	if node.ttype == "Object" /*== "struct"*/ {
-		if node.value[0] == "}" {
-			tab = strings.Repeat("\t", node.level)
-			result += tab + "}\n"
-		}
 	} else if node.ttype == "Array" /* == "array" */{		
-		
 	} else if node.ttype == "Property" && len(node.value) >= 1 {
 		if len(node.value) > 1 {
-			if len(node.value) < 20  {
+			if len(node.key) < 10  {
 				result = tab + node.key + "\t\t" + "[]string\n"
 			} else {
 				result = tab + node.key + "\t" + "[]string\n"
 			}
 		} else {
-			if len(node.value) < 20  {
+			if len(node.key) < 10 {
 				result = tab + node.key + "\t\t" + "string\n"
 			} else {
 				result = tab + node.key + "\t" + "string\n"
@@ -386,3 +385,7 @@ func main() {
 	tokenqueue = queue.Init()
 	parseCmd(os.Args)
 }
+
+/*
+Fixing multiples in one array object:
+*/
