@@ -17,7 +17,7 @@ import (
 // Add checking for integer (currently lexer will only recognize strings "something" as a value to an identifier
 
 // Possible Characters
-var (
+const (
 	LEFT_CB = '{'  //0
 	RIGHT_CB = '}' //1
 	LEFT_PA = '('  //2
@@ -33,6 +33,7 @@ var (
 
 var tokens []token.Token
 var tokenqueue *queue.Queue
+var nodesarray []*Node
 
 // AST Node
 type Node struct {
@@ -132,7 +133,6 @@ func readInput(input string) []rune{
 	return chars
 }
 
-// token.Tokenizer. Create an array of tokens for now
 func lexer(input string){
 	// Has to start as false otherwise values and identifiers will be swapped
 	isIdentifier := false 
@@ -148,7 +148,6 @@ func lexer(input string){
 		useBuffer := readChar(char)
 
 		if useBuffer == 3 /*Array*/ {
-			// Everything inside the array is a value
 			if string(char) == "[" {
 				isValue = true
 			} else {
@@ -217,7 +216,6 @@ func lexer(input string){
 		}
 		prevChar = char
 	}
-	tokenqueue.Print()
 }
 
 func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
@@ -232,7 +230,6 @@ func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
 		level++
 	}
 
-	// BUILD TEST CASE FOR RECURSION
 	if tokenqueue.Peek() == nil {
 		fmt.Println("Returning: next token is nil", tokenqueue.Peek())
 		return
@@ -266,21 +263,46 @@ func parser(tree *Treeast, node *Node, prevIdentifierNode *Node, level int) {
 			level++
 		}
 
-		// Append to current node's children and recurse
 		if nextoken.Lexeme == "object" {
-			currnode.children = append(currnode.children, &Node{"Object", "", []string{nextoken.Value}, level, []*Node{}})
-
-			parser(tree, currnode.children[len(currnode.children) - 1], prevIdentifierNode, level)
+			newnode := &Node{"Object", "", []string{nextoken.Value}, level, []*Node{}}
+			if !doesExist(newnode) {
+				nodesarray = append(nodesarray, newnode)
+				currnode.children = append(currnode.children, newnode)
+				parser(tree, currnode.children[len(currnode.children) - 1], prevIdentifierNode, level)
+			}
 		} else if nextoken.Lexeme == "identifier" {
 			newnode := &Node{"Property", nextoken.Value, []string{}, level, []*Node{}}
-			currnode.children = append(currnode.children, newnode)
-			prevIdentifierNode = newnode
+			if !doesExist(newnode) {
+				nodesarray = append(nodesarray, newnode)
+				currnode.children = append(currnode.children, newnode)
+				if tokenqueue.Peek().Value == "\"" {
+					_ = tokenqueue.Pop()
+					if tokenqueue.Peek().Value == ":" {
+						_ = tokenqueue.Pop()
+						// Add dummy values for now
+						if tokenqueue.Peek().Lexeme == "Array" {
+							newnode.value = append(newnode.value, "a", "b")
+						} else {
+							newnode.value = append(newnode.value, "a")
+						}
+					}
+				}
+				//prevIdentifierNode = newnode
+			}
 		} else if nextoken.Lexeme == "Array" {
-			currnode.children = append(currnode.children, &Node{"Array", "", []string{nextoken.Value}, level, []*Node{}})
+			newnode := &Node{"Array", "", []string{nextoken.Value}, level, []*Node{}}
+			if !doesExist(newnode) {
+				nodesarray = append(nodesarray, newnode)
+				currnode.children = append(currnode.children, newnode)
+			}
 		} else if nextoken.Lexeme == "value" {
+			/*
+			fmt.Println("Previous node:", prevIdentifierNode)
+			fmt.Print("\n\n\n")
 			if prevIdentifierNode != nil {
 				prevIdentifierNode.value = append(prevIdentifierNode.value, nextoken.Value)
 			}
+			*/
 		}
 	}
 	return
@@ -325,6 +347,15 @@ func turnToGo(node *Node, closeobj bool) string {
 	}
 
 	return result
+}
+
+func doesExist(needlenode *Node) bool {
+	for _, node := range nodesarray {
+		if needlenode.level == node.level && needlenode.key == node.key && needlenode.ttype == node.ttype {
+			return true
+		}
+	}
+	return false
 }
 
 func toClipboard(output string) {
@@ -388,4 +419,6 @@ func main() {
 
 /*
 Fixing multiples in one array object:
+Solution 1:
+Create a map, if exact node already exist (check to ttype, key, level) then check if value is same. If different, add the value of current node to already existing node.
 */
