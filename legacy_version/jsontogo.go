@@ -109,6 +109,7 @@ func readChar(ch rune) int {
 
 func readInput(input string) []rune{
 	chars := []rune{}
+	buf := []byte{}
 
 	file, err := os.Open(input)
 	if err != nil {
@@ -117,6 +118,7 @@ func readInput(input string) []rune{
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(buf, 2048*1024)
 
 	// Append characters to array for simpler pass through
 	for scanner.Scan() {
@@ -421,4 +423,9 @@ func main() {
 Fixing multiples in one array object:
 Solution 1:
 Create a map, if exact node already exist (check to ttype, key, level) then check if value is same. If different, add the value of current node to already existing node.
+
+It kinda works but not good enough. Bigger data resutls in errors. Fixed solution isn't the way.
+
+Solution 2:
+Create a single token Array that holds anything in between [ ]. Except if the object starts with an array.
 */
