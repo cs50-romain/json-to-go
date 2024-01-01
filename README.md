@@ -8,3 +8,7 @@ The program parse the command line for a file name and the copy function if you 
 
 Example:
 `jsontogo.go sample.json copy`
+
+### Sources:
+Book:
+- Writing an Interpreter in Go by Thorsten Ball
