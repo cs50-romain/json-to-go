@@ -15,7 +15,7 @@ const (
 
 	COMMA = ","
 	DD = ":"
-	PARENTH = "\""
+	QUOTES = "\""
 	
 	KEY = "KEY" // Any key in a key:value pair
 	INT = "INT" // 1, 2, 34...
