@@ -32,12 +32,31 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.COMMA, l.ch)
 	} else if l.ch == '"' {
 		tok = newToken(token.QUOTES, l.ch)
-	} else if l.ch == ':' {
+	} else if l.ch == ':' && !isLetter(l.input[l.position - 1]){
 		tok = newToken(token.DD, l.ch)
+	} else {
+		// Check if its a string or a digit or a key
+		if isLetter(l.ch) {
+			tok.Literal = l.readKey()
+			tok.Type = token.KEY
+			return tok
+		}
 	}
 
 	l.readChar()
 	return tok
+}
+
+func (l *Lexer) readKey() string {
+	position := l.position
+	for isLetter(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func isLetter(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '/' || ch == '\\'
 }
 
 func (l *Lexer) readChar() {
@@ -51,5 +70,5 @@ func (l *Lexer) readChar() {
 }
 
 func newToken(tokenType token.TokenType, ch byte) token.Token {
-	return token.Token{tokenType, string(ch)}
+	return token.Token{Type: tokenType, Literal: string(ch)}
 }

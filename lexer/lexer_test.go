@@ -21,6 +21,7 @@ func TestNextToken(t *testing.T) {
 		{token.COMMA, ","},
 		{token.QUOTES, string('"')},
 		{token.DD, ":"},
+		{token.KEY, "Hello"},
 	}
 
 	l := New(input)
